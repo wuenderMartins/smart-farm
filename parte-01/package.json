@@ -1,0 +1,18 @@
+{
+  "name": "smart-farm-parte-01",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart Farm parte 01: talhoes, gateways e servico de media comunicando por socket TCP",
+  "scripts": {
+    "start": "tsx src/iniciar.ts",
+    "talhao": "tsx src/talhao.ts",
+    "gateway": "tsx src/gateway.ts",
+    "servico-media": "tsx src/servico-media.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
