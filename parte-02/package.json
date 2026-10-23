@@ -1,0 +1,18 @@
+{
+  "name": "smart-farm-parte-02",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart Farm parte 02: servico de media via gRPC, FOG e analise de anomalias",
+  "scripts": {
+    "start": "tsx src/iniciar.ts",
+    "talhao": "tsx src/talhao.ts",
+    "gateway": "tsx src/gateway.ts",
+    "servico-media": "tsx src/servico-media.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
