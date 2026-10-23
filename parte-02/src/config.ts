@@ -33,7 +33,8 @@ export const GATEWAYS: GatewayInfo[] = [
   },
 ];
 
-export const PORTA_SERVICO_MEDIA = 4000;
+// Servidor gRPC do microsservico para calculo.
+export const PORTA_SERVICO_MEDIA = 50051;
 
 // De quanto em quanto tempo o gateway le os talhoes, e quanto tempo ele
 // espera uma resposta antes de desistir.

@@ -15,15 +15,3 @@ export function calcularMedia(gateway: string, leituras: Leitura[]): Media {
     irradiacaoSolar: mediaDe("irradiacaoSolar"),
   };
 }
-
-// Pelo socket chega JSON de qualquer formato, entao cada leitura e
-// conferida antes de entrar na conta.
-export function leituraValida(valor: unknown): valor is Leitura {
-  const leitura = valor as Leitura;
-  return (
-    typeof leitura === "object" &&
-    leitura !== null &&
-    typeof leitura.talhao === "string" &&
-    [leitura.temperatura, leitura.umidade, leitura.irradiacaoSolar].every(Number.isFinite)
-  );
-}

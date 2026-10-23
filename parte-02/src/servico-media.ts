@@ -1,32 +1,42 @@
-import * as net from "node:net";
+import * as grpc from "@grpc/grpc-js";
 import { HOST, PORTA_SERVICO_MEDIA } from "./config";
-import { calcularMedia, leituraValida } from "./calculo";
-import { aoReceber, enviar } from "./socket";
+import { calcularMedia } from "./calculo";
+import { ServicoMedia } from "./grpc";
+import { Lote, Media } from "./tipos";
 import { criarLog, formatarMedidas } from "./util";
 
 const log = criarLog("Servico de Media");
 
-// Microsservico para calculo: recebe as leituras de um gateway e devolve
-// a media na mesma conexao. Nao guarda nada entre um pedido e outro.
-const servidor = net.createServer((socket) => {
-  aoReceber(socket, (mensagem) => {
-    if (mensagem.tipo !== "CALCULAR_MEDIA") {
-      enviar(socket, { tipo: "ERRO", motivo: `pedido desconhecido: ${mensagem.tipo}` });
-      return;
+// Na parte 02 o microsservico para calculo e um servidor gRPC. O formato
+// das mensagens vem do proto/media.proto, entao nao e mais preciso
+// conferir campo por campo como no socket.
+function CalcularMedia(
+  chamada: grpc.ServerUnaryCall<Lote, Media>,
+  responder: grpc.sendUnaryData<Media>
+): void {
+  const { gateway, leituras } = chamada.request;
+
+  if (leituras.length === 0) {
+    responder({ code: grpc.status.INVALID_ARGUMENT, details: "lote sem leituras" });
+    return;
+  }
+
+  const media = calcularMedia(gateway, leituras);
+  log(`${gateway}: media de ${media.quantidade} talhoes -> ${formatarMedidas(media)}`);
+  responder(null, media);
+}
+
+const servidor = new grpc.Server();
+servidor.addService(ServicoMedia.service, { CalcularMedia });
+
+servidor.bindAsync(
+  `${HOST}:${PORTA_SERVICO_MEDIA}`,
+  grpc.ServerCredentials.createInsecure(),
+  (erro, porta) => {
+    if (erro) {
+      log(`nao foi possivel iniciar: ${erro.message}`);
+      process.exit(1);
     }
-
-    const { gateway, leituras } = mensagem;
-    if (!Array.isArray(leituras) || leituras.length === 0 || !leituras.every(leituraValida)) {
-      enviar(socket, { tipo: "ERRO", motivo: "leituras ausentes ou invalidas" });
-      return;
-    }
-
-    const media = calcularMedia(gateway, leituras);
-    log(`${gateway}: media de ${media.quantidade} talhoes -> ${formatarMedidas(media)}`);
-    enviar(socket, { tipo: "MEDIA", media });
-  });
-
-  socket.on("error", (erro) => log(`conexao perdida: ${erro.message}`));
-});
-
-servidor.listen(PORTA_SERVICO_MEDIA, HOST, () => log(`ouvindo na porta ${PORTA_SERVICO_MEDIA}`));
+    log(`servidor gRPC ouvindo na porta ${porta}`);
+  }
+);

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package fazenda;
+
+// Microsservico para calculo (camada Edge). O gateway envia as leituras
+// dos seus talhoes e recebe a media na resposta.
+service ServicoMedia {
+  rpc CalcularMedia(Lote) returns (Media);
+}
+
+message Leitura {
+  string talhao = 1;
+  double temperatura = 2;
+  double umidade = 3;
+  double irradiacao_solar = 4;
+  string horario = 5;
+}
+
+message Lote {
+  string gateway = 1;
+  repeated Leitura leituras = 2;
+}
+
+message Media {
+  string gateway = 1;
+  int32 quantidade = 2;
+  double temperatura = 3;
+  double umidade = 4;
+  double irradiacao_solar = 5;
+}

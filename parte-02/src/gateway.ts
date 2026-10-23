@@ -1,13 +1,7 @@
-import {
-  GATEWAYS,
-  GatewayInfo,
-  INTERVALO_LEITURA_MS,
-  PORTA_SERVICO_MEDIA,
-  TalhaoInfo,
-  buscarGateway,
-} from "./config";
+import { pedirMedia } from "./cliente-media";
+import { GATEWAYS, GatewayInfo, INTERVALO_LEITURA_MS, TalhaoInfo, buscarGateway } from "./config";
 import { pedir } from "./socket";
-import { Leitura, Media } from "./tipos";
+import { Leitura } from "./tipos";
 import { criarLog, esperar, formatarMedidas } from "./util";
 
 function gatewayInformado(): GatewayInfo {
@@ -35,25 +29,16 @@ async function lerTalhao(talhao: TalhaoInfo): Promise<Leitura | null> {
   return null;
 }
 
-async function pedirMedia(leituras: Leitura[]): Promise<Media> {
-  const resposta = await pedir(PORTA_SERVICO_MEDIA, {
-    tipo: "CALCULAR_MEDIA",
-    gateway: gateway.id,
-    leituras,
-  });
-  if (resposta.tipo === "MEDIA") return resposta.media;
-  throw new Error(resposta.tipo === "ERRO" ? resposta.motivo : `resposta inesperada: ${resposta.tipo}`);
-}
-
 async function ciclo(): Promise<void> {
   const respostas = await Promise.all(gateway.talhoes.map(lerTalhao));
   const leituras = respostas.filter((leitura) => leitura !== null);
   log(`${leituras.length} de ${gateway.talhoes.length} talhoes responderam`);
   if (leituras.length === 0) return;
 
+  // Talhoes continuam via socket; o calculo da media agora e um rpc.
   try {
-    const media = await pedirMedia(leituras);
-    log(`media recebida: ${formatarMedidas(media)}`);
+    const media = await pedirMedia({ gateway: gateway.id, leituras });
+    log(`media recebida via gRPC: ${formatarMedidas(media)}`);
   } catch (erro) {
     log(`servico de media indisponivel: ${(erro as Error).message}`);
   }

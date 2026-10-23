@@ -16,10 +16,15 @@ export interface Media {
   irradiacaoSolar: number;
 }
 
+// Pedido do rpc CalcularMedia (proto/media.proto).
+export interface Lote {
+  gateway: string;
+  leituras: Leitura[];
+}
+
 // Mensagens que circulam pelos sockets. Cada uma vai como uma linha de JSON.
+// A conversa com o servico de media saiu daqui: agora ela e feita via gRPC.
 export type Mensagem =
   | { tipo: "PEDIR_LEITURA" }
   | { tipo: "LEITURA"; leitura: Leitura }
-  | { tipo: "CALCULAR_MEDIA"; gateway: string; leituras: Leitura[] }
-  | { tipo: "MEDIA"; media: Media }
   | { tipo: "ERRO"; motivo: string };
