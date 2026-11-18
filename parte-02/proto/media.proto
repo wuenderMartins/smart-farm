@@ -21,10 +21,21 @@ message Lote {
   repeated Leitura leituras = 2;
 }
 
+// Media das ultimas leituras de um talhao (media movel).
+message MediaTalhao {
+  string talhao = 1;
+  int32 leituras = 2;
+  double temperatura = 3;
+  double umidade = 4;
+  double irradiacao_solar = 5;
+}
+
+// Media geral do gateway (todas as leituras do lote) e a de cada talhao.
 message Media {
   string gateway = 1;
   int32 quantidade = 2;
   double temperatura = 3;
   double umidade = 4;
   double irradiacao_solar = 5;
+  repeated MediaTalhao talhoes = 6;
 }

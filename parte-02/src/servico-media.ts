@@ -22,7 +22,10 @@ function CalcularMedia(
   }
 
   const media = calcularMedia(gateway, leituras);
-  log(`${gateway}: media de ${media.quantidade} talhoes -> ${formatarMedidas(media)}`);
+  log(
+    `${gateway}: ${media.quantidade} leituras de ${media.talhoes.length} talhoes -> ` +
+      formatarMedidas(media)
+  );
   responder(null, media);
 }
 

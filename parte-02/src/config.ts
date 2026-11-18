@@ -43,6 +43,9 @@ export const PORTA_SERVICO_MEDIA = 4300;
 export const INTERVALO_LEITURA_MS = 3000;
 export const TIMEOUT_MS = 2000;
 
+// Quantas leituras de cada talhao entram na media movel.
+export const TAMANHO_JANELA = 5;
+
 export function buscarGateway(id: string): GatewayInfo | undefined {
   return GATEWAYS.find((gateway) => gateway.id === id);
 }
