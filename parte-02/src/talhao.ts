@@ -1,9 +1,12 @@
 import * as net from "node:net";
+import * as readline from "node:readline";
 import { GATEWAYS, HOST, buscarTalhao } from "./config";
-import { Sensores } from "./sensores";
+import { CENARIOS, Sensores, ehCenario } from "./sensores";
 import { aoReceber, enviar } from "./socket";
 import { Leitura } from "./tipos";
 import { criarLog, formatarMedidas } from "./util";
+
+const NOMES_CENARIOS = Object.keys(CENARIOS).join(", ");
 
 const talhao = buscarTalhao(process.argv[2] ?? "");
 
@@ -13,8 +16,34 @@ if (!talhao) {
   process.exit(1);
 }
 
+const cenarioInicial = process.argv[3] ?? "normal";
+
+if (!ehCenario(cenarioInicial)) {
+  console.error(`Cenario "${cenarioInicial}" nao existe. Opcoes: ${NOMES_CENARIOS}`);
+  process.exit(1);
+}
+
 const log = criarLog(talhao.id);
-const sensores = new Sensores();
+const sensores = new Sensores(cenarioInicial);
+
+function mudarCenario(nome: string): void {
+  if (!ehCenario(nome)) {
+    log(`cenario "${nome}" nao existe. Opcoes: ${NOMES_CENARIOS}`);
+    return;
+  }
+  sensores.mudarCenario(nome);
+  log(`cenario agora e "${nome}"`);
+}
+
+// O cenario pode mudar com o talhao rodando. Num terminal proprio, basta
+// digitar o nome dele; iniciado pelo iniciar.ts, o nome chega pelo canal
+// de comunicacao entre os processos.
+if (process.stdin.isTTY) {
+  readline.createInterface({ input: process.stdin }).on("line", (linha) => {
+    if (linha.trim()) mudarCenario(linha.trim());
+  });
+}
+process.on("message", (nome) => mudarCenario(String(nome)));
 
 // O talhao e o servidor (S) da conexao: fica ouvindo e so mede quando o
 // gateway (C) pede uma leitura.
@@ -30,7 +59,7 @@ const servidor = net.createServer((socket) => {
       horario: new Date().toISOString(),
       ...sensores.medir(),
     };
-    log(formatarMedidas(leitura));
+    log(`${formatarMedidas(leitura)} [${sensores.cenarioAtual}]`);
     enviar(socket, { tipo: "LEITURA", leitura });
   });
 
@@ -38,4 +67,11 @@ const servidor = net.createServer((socket) => {
   socket.on("error", (erro) => log(`conexao perdida: ${erro.message}`));
 });
 
-servidor.listen(talhao.porta, HOST, () => log(`ouvindo na porta ${talhao.porta}`));
+servidor.on("error", (erro) => {
+  log(`nao foi possivel abrir a porta ${talhao.porta}: ${erro.message}`);
+  process.exit(1);
+});
+
+servidor.listen(talhao.porta, HOST, () =>
+  log(`ouvindo na porta ${talhao.porta}, cenario "${sensores.cenarioAtual}"`)
+);
