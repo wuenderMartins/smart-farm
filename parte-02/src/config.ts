@@ -33,8 +33,10 @@ export const GATEWAYS: GatewayInfo[] = [
   },
 ];
 
-// Servidor gRPC do microsservico para calculo.
-export const PORTA_SERVICO_MEDIA = 50051;
+// Servidor gRPC do microsservico para calculo. Fica abaixo de 49152 de
+// proposito: o Windows reserva faixas acima disso (Hyper-V, WSL, Docker),
+// e nelas nenhum programa consegue abrir porta (erro EACCES).
+export const PORTA_SERVICO_MEDIA = 4300;
 
 // De quanto em quanto tempo o gateway le os talhoes, e quanto tempo ele
 // espera uma resposta antes de desistir.

@@ -32,7 +32,7 @@ A Parte 02 parte da [Parte 01](../parte-01) e implementa o diagrama completo da 
 | Formato das mensagens | combinado no código ([src/tipos.ts](../parte-01/src/tipos.ts)) | contrato em [proto/media.proto](proto/media.proto) |
 | Validação das leituras | manual, campo por campo | feita pelo gRPC a partir dos tipos do `.proto` |
 | Conexão | uma nova a cada pedido | o cliente gRPC mantém a conexão aberta e reaproveita |
-| Porta do serviço | 4000 | 50051 |
+| Porta do serviço | 4000 | 4300 |
 
 Os talhões e a leitura dos talhões pelo gateway continuam iguais, por socket.
 
