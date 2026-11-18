@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package fazenda;
+
+// Microsservico de Analise de Anomalias (camada FOG). A FOG envia a media
+// movel de cada talhao de um gateway e recebe os alertas encontrados, cada
+// um com o gatilho a disparar.
+service ServicoAnomalias {
+  rpc Analisar(PedidoAnalise) returns (Diagnostico);
+}
+
+// Mesmo formato do MediaTalhao do media.proto: cada microsservico tem o
+// seu contrato completo, sem depender do arquivo do outro.
+message MediaTalhao {
+  string talhao = 1;
+  int32 leituras = 2;
+  double temperatura = 3;
+  double umidade = 4;
+  double irradiacao_solar = 5;
+}
+
+message PedidoAnalise {
+  string gateway = 1;
+  repeated MediaTalhao talhoes = 2;
+}
+
+message Alerta {
+  string gateway = 1;
+  string talhao = 2;
+  string codigo = 3;
+  string descricao = 4;
+  string acao = 5;
+  string acao_ao_normalizar = 6;
+}
+
+message Diagnostico {
+  repeated Alerta alertas = 1;
+}

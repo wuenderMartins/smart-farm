@@ -6,9 +6,14 @@ import { loadSync } from "@grpc/proto-loader";
 // exemplo grpc-tads6. O proto-loader troca os nomes em snake_case por
 // camelCase (irradiacao_solar vira irradiacaoSolar), e "defaults: true"
 // faz campos vazios chegarem com o valor padrao (0, "" ou lista vazia).
-const definicao = loadSync(path.join(__dirname, "..", "proto", "media.proto"), {
-  defaults: true,
-});
-const fazenda = grpc.loadPackageDefinition(definicao).fazenda as grpc.GrpcObject;
+function carregar(arquivo: string): grpc.GrpcObject {
+  const definicao = loadSync(path.join(__dirname, "..", "proto", arquivo), {
+    defaults: true,
+  });
+  return grpc.loadPackageDefinition(definicao).fazenda as grpc.GrpcObject;
+}
 
-export const ServicoMedia = fazenda.ServicoMedia as grpc.ServiceClientConstructor;
+export const ServicoMedia = carregar("media.proto").ServicoMedia as grpc.ServiceClientConstructor;
+
+export const ServicoAnomalias = carregar("anomalias.proto")
+  .ServicoAnomalias as grpc.ServiceClientConstructor;

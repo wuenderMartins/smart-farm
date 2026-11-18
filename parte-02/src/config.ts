@@ -9,14 +9,17 @@ export interface TalhaoInfo {
   porta: number;
 }
 
+// A porta do gateway e a do lado servidor dele, onde a FOG conecta.
 export interface GatewayInfo {
   id: string;
+  porta: number;
   talhoes: TalhaoInfo[];
 }
 
 export const GATEWAYS: GatewayInfo[] = [
   {
     id: "G1",
+    porta: 4501,
     talhoes: [
       { id: "G1-T01", porta: 4101 },
       { id: "G1-T02", porta: 4102 },
@@ -25,6 +28,7 @@ export const GATEWAYS: GatewayInfo[] = [
   },
   {
     id: "G2",
+    porta: 4502,
     talhoes: [
       { id: "G2-T01", porta: 4201 },
       { id: "G2-T02", porta: 4202 },
@@ -38,9 +42,13 @@ export const GATEWAYS: GatewayInfo[] = [
 // e nelas nenhum programa consegue abrir porta (erro EACCES).
 export const PORTA_SERVICO_MEDIA = 4300;
 
-// De quanto em quanto tempo o gateway le os talhoes, e quanto tempo ele
-// espera uma resposta antes de desistir.
+// Servidor gRPC do microsservico de analise de anomalias, usado pela FOG.
+export const PORTA_SERVICO_ANOMALIAS = 4400;
+
+// De quanto em quanto tempo o gateway le os talhoes e a FOG consulta os
+// gateways, e quanto tempo cada um espera uma resposta antes de desistir.
 export const INTERVALO_LEITURA_MS = 3000;
+export const INTERVALO_FOG_MS = 5000;
 export const TIMEOUT_MS = 2000;
 
 // Quantas leituras de cada talhao entram na media movel.

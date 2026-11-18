@@ -30,9 +30,42 @@ export interface Media extends Medidas {
   talhoes: MediaTalhao[];
 }
 
+// O que o gateway entrega para a FOG quando ela pede: o ultimo resultado
+// do servico de media e quais talhoes nao responderam.
+export interface Situacao {
+  gateway: string;
+  atualizadaEm: string; // ISO 8601
+  media: Media;
+  semResposta: string[];
+}
+
+// Pedido do rpc Analisar (proto/anomalias.proto).
+export interface PedidoAnalise {
+  gateway: string;
+  talhoes: MediaTalhao[];
+}
+
+// Uma anomalia encontrada em um talhao, com o gatilho a disparar quando
+// ela aparece (acao) e quando ela some (acaoAoNormalizar).
+export interface Alerta {
+  gateway: string;
+  talhao: string;
+  codigo: string;
+  descricao: string;
+  acao: string;
+  acaoAoNormalizar: string;
+}
+
+// Resposta do rpc Analisar.
+export interface Diagnostico {
+  alertas: Alerta[];
+}
+
 // Mensagens que circulam pelos sockets. Cada uma vai como uma linha de JSON.
-// A conversa com o servico de media saiu daqui: agora ela e feita via gRPC.
+// A conversa com os microsservicos nao passa por aqui: ela e feita via gRPC.
 export type Mensagem =
   | { tipo: "PEDIR_LEITURA" }
   | { tipo: "LEITURA"; leitura: Leitura }
+  | { tipo: "PEDIR_SITUACAO" }
+  | { tipo: "SITUACAO"; situacao: Situacao | null }
   | { tipo: "ERRO"; motivo: string };

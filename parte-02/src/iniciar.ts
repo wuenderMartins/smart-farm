@@ -11,10 +11,12 @@ function subir(arquivo: string, ...args: string[]): void {
 }
 
 subir("servico-media.ts");
+subir("servico-anomalias.ts");
 for (const gateway of GATEWAYS) {
   for (const talhao of gateway.talhoes) subir("talhao.ts", talhao.id);
   subir("gateway.ts", gateway.id);
 }
+subir("fog.ts");
 
 // Ctrl+C encerra todos os processos juntos.
 process.on("SIGINT", () => {

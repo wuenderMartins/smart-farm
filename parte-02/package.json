@@ -8,6 +8,8 @@
     "talhao": "tsx src/talhao.ts",
     "gateway": "tsx src/gateway.ts",
     "servico-media": "tsx src/servico-media.ts",
+    "servico-anomalias": "tsx src/servico-anomalias.ts",
+    "fog": "tsx src/fog.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
