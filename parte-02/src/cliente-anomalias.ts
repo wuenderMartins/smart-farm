@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import { SERVICO_ANOMALIAS, TIMEOUT_MS } from "./config";
-import { ServicoAnomalias, descreverErro } from "./grpc";
+import { OPCOES_CANAL, ServicoAnomalias, descreverErro } from "./grpc";
 import { Diagnostico, PedidoAnalise } from "./tipos";
 
 // Mesmo esquema do cliente-media.ts: o tipo descreve o rpc que o
@@ -16,7 +16,8 @@ type ClienteAnomalias = grpc.Client & {
 const endereco = `${SERVICO_ANOMALIAS.host}:${SERVICO_ANOMALIAS.porta}`;
 const cliente = new ServicoAnomalias(
   endereco,
-  grpc.credentials.createInsecure()
+  grpc.credentials.createInsecure(),
+  OPCOES_CANAL
 ) as unknown as ClienteAnomalias;
 
 /** Chama o rpc Analisar, com o mesmo deadline usado no servico de media. */

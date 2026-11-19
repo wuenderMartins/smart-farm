@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import { SERVICO_MEDIA, TIMEOUT_MS } from "./config";
-import { ServicoMedia, descreverErro } from "./grpc";
+import { OPCOES_CANAL, ServicoMedia, descreverErro } from "./grpc";
 import { Lote, Media } from "./tipos";
 
 // Os metodos do cliente sao criados a partir do .proto em tempo de
@@ -18,7 +18,8 @@ type ClienteMedia = grpc.Client & {
 const endereco = `${SERVICO_MEDIA.host}:${SERVICO_MEDIA.porta}`;
 const cliente = new ServicoMedia(
   endereco,
-  grpc.credentials.createInsecure()
+  grpc.credentials.createInsecure(),
+  OPCOES_CANAL
 ) as unknown as ClienteMedia;
 
 /**

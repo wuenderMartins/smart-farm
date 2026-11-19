@@ -13,6 +13,14 @@ function carregar(arquivo: string): grpc.GrpcObject {
   return grpc.loadPackageDefinition(definicao).fazenda as grpc.GrpcObject;
 }
 
+// Se o servico cair, ou subir depois do cliente, o gRPC reconecta
+// sozinho, esperando cada vez mais entre as tentativas. O padrao chega a
+// 2 minutos de espera; aqui o maximo e 5 s, para a fazenda voltar rapido.
+export const OPCOES_CANAL: grpc.ChannelOptions = {
+  "grpc.initial_reconnect_backoff_ms": 1000,
+  "grpc.max_reconnect_backoff_ms": 5000,
+};
+
 /** Traduz os erros mais comuns do gRPC para uma frase curta no log. */
 export function descreverErro(erro: grpc.ServiceError, endereco: string): string {
   if (erro.code === grpc.status.UNAVAILABLE) return `fora do ar (${endereco})`;
