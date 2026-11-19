@@ -13,6 +13,13 @@ function carregar(arquivo: string): grpc.GrpcObject {
   return grpc.loadPackageDefinition(definicao).fazenda as grpc.GrpcObject;
 }
 
+/** Traduz os erros mais comuns do gRPC para uma frase curta no log. */
+export function descreverErro(erro: grpc.ServiceError, endereco: string): string {
+  if (erro.code === grpc.status.UNAVAILABLE) return `fora do ar (${endereco})`;
+  if (erro.code === grpc.status.DEADLINE_EXCEEDED) return `nao respondeu a tempo (${endereco})`;
+  return erro.details || erro.message;
+}
+
 export const ServicoMedia = carregar("media.proto").ServicoMedia as grpc.ServiceClientConstructor;
 
 export const ServicoAnomalias = carregar("anomalias.proto")

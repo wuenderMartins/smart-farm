@@ -1,0 +1,25 @@
+{
+  "maquinas": {
+    "m1": "127.0.0.1",
+    "m2": "127.0.0.1",
+    "m3": "127.0.0.1",
+    "m4": "127.0.0.1",
+    "m5": "127.0.0.1",
+    "m6": "127.0.0.1"
+  },
+  "talhoes": {
+    "G1-T01": { "maquina": "m1", "porta": 4101 },
+    "G1-T02": { "maquina": "m1", "porta": 4102 },
+    "G1-T03": { "maquina": "m1", "porta": 4103 },
+    "G2-T01": { "maquina": "m3", "porta": 4201 },
+    "G2-T02": { "maquina": "m3", "porta": 4202 },
+    "G2-T03": { "maquina": "m3", "porta": 4203 }
+  },
+  "gateways": {
+    "G1": { "maquina": "m2", "porta": 4501, "talhoes": ["G1-T01", "G1-T02", "G1-T03"] },
+    "G2": { "maquina": "m4", "porta": 4502, "talhoes": ["G2-T01", "G2-T02", "G2-T03"] }
+  },
+  "servicoMedia": { "maquina": "m5", "porta": 4300 },
+  "fog": { "maquina": "m6" },
+  "servicoAnomalias": { "maquina": "m6", "porta": 4400 }
+}

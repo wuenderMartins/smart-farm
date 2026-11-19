@@ -1,5 +1,5 @@
 import { analisar } from "./cliente-anomalias";
-import { GATEWAYS, GatewayInfo, INTERVALO_FOG_MS } from "./config";
+import { GATEWAYS, GatewayInfo, INTERVALO_FOG_MS, SERVICO_ANOMALIAS } from "./config";
 import { pedir } from "./socket";
 import { Alerta, Situacao } from "./tipos";
 import { criarLog, esperar, formatarMedidas } from "./util";
@@ -16,7 +16,7 @@ const chave = (alerta: Alerta) => `${alerta.talhao} ${alerta.codigo}`;
 // gateway (S) responde. Gateway fora do ar nao para a FOG.
 async function consultar(gateway: GatewayInfo): Promise<Situacao | null> {
   try {
-    const resposta = await pedir(gateway.porta, { tipo: "PEDIR_SITUACAO" });
+    const resposta = await pedir(gateway, { tipo: "PEDIR_SITUACAO" });
     if (resposta.tipo === "SITUACAO") {
       if (!resposta.situacao) log(`${gateway.id} ainda nao tem media calculada`);
       return resposta.situacao;
@@ -72,7 +72,9 @@ async function ciclo(): Promise<void> {
 }
 
 async function executar(): Promise<void> {
-  log(`iniciada. Gateways: ${GATEWAYS.map((g) => g.id).join(", ")}`);
+  const gateways = GATEWAYS.map((g) => `${g.id} (${g.host}:${g.porta})`);
+  log(`iniciada. Gateways: ${gateways.join(", ")}`);
+  log(`servico de anomalias em ${SERVICO_ANOMALIAS.host}:${SERVICO_ANOMALIAS.porta}`);
 
   while (true) {
     await esperar(INTERVALO_FOG_MS);

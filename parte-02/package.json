@@ -10,6 +10,8 @@
     "servico-media": "tsx src/servico-media.ts",
     "servico-anomalias": "tsx src/servico-anomalias.ts",
     "fog": "tsx src/fog.ts",
+    "verificar": "tsx src/verificar.ts",
+    "ip": "tsx src/ip.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

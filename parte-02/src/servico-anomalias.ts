@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import { HOST, PORTA_SERVICO_ANOMALIAS } from "./config";
+import { SERVICO_ANOMALIAS, escutarEm } from "./config";
 import { ServicoAnomalias } from "./grpc";
 import { avaliar } from "./regras";
 import { Diagnostico, PedidoAnalise } from "./tipos";
@@ -27,7 +27,7 @@ const servidor = new grpc.Server();
 servidor.addService(ServicoAnomalias.service, { Analisar });
 
 servidor.bindAsync(
-  `${HOST}:${PORTA_SERVICO_ANOMALIAS}`,
+  `${escutarEm(SERVICO_ANOMALIAS.maquina)}:${SERVICO_ANOMALIAS.porta}`,
   grpc.ServerCredentials.createInsecure(),
   (erro, porta) => {
     if (erro) {

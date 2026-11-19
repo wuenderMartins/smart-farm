@@ -1,6 +1,6 @@
 import * as net from "node:net";
 import * as readline from "node:readline";
-import { GATEWAYS, HOST, buscarTalhao } from "./config";
+import { TALHOES, buscarTalhao, escutarEm } from "./config";
 import { CENARIOS, Sensores, ehCenario } from "./sensores";
 import { aoReceber, enviar } from "./socket";
 import { Leitura } from "./tipos";
@@ -11,8 +11,7 @@ const NOMES_CENARIOS = Object.keys(CENARIOS).join(", ");
 const talhao = buscarTalhao(process.argv[2] ?? "");
 
 if (!talhao) {
-  const ids = GATEWAYS.flatMap((gateway) => gateway.talhoes.map((t) => t.id));
-  console.error(`Informe o talhao. Opcoes: ${ids.join(", ")}`);
+  console.error(`Informe o talhao. Opcoes: ${TALHOES.map((t) => t.id).join(", ")}`);
   process.exit(1);
 }
 
@@ -72,6 +71,6 @@ servidor.on("error", (erro) => {
   process.exit(1);
 });
 
-servidor.listen(talhao.porta, HOST, () =>
+servidor.listen(talhao.porta, escutarEm(talhao.maquina), () =>
   log(`ouvindo na porta ${talhao.porta}, cenario "${sensores.cenarioAtual}"`)
 );

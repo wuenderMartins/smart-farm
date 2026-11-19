@@ -1,41 +1,90 @@
 import { ChildProcess, fork } from "node:child_process";
 import * as path from "node:path";
 import * as readline from "node:readline";
-import { GATEWAYS } from "./config";
+import { FOG, GATEWAYS, MAQUINAS, SERVICO_ANOMALIAS, SERVICO_MEDIA, TALHOES } from "./config";
 import { CENARIOS } from "./sensores";
+import { ipsDestaMaquina } from "./util";
 
-// Sobe cada componente em um processo separado, como se cada um
-// estivesse em uma maquina diferente da fazenda.
+interface Componente {
+  nome: string;
+  arquivo: string;
+  args: string[];
+  maquina: string;
+}
+
+// Todos os componentes do rede.json, na ordem em que convem subir:
+// servicos, talhoes, gateways e por ultimo a FOG.
+const COMPONENTES: Componente[] = [
+  { nome: "Servico de Media", arquivo: "servico-media.ts", args: [], maquina: SERVICO_MEDIA.maquina },
+  {
+    nome: "Servico de Anomalias",
+    arquivo: "servico-anomalias.ts",
+    args: [],
+    maquina: SERVICO_ANOMALIAS.maquina,
+  },
+  ...TALHOES.map((t) => ({ nome: t.id, arquivo: "talhao.ts", args: [t.id], maquina: t.maquina })),
+  ...GATEWAYS.map((g) => ({ nome: g.id, arquivo: "gateway.ts", args: [g.id], maquina: g.maquina })),
+  { nome: "FOG", arquivo: "fog.ts", args: [], maquina: FOG.maquina },
+];
+
+// npm start          -> sobe tudo neste computador (para testar sozinho)
+// npm start -- m3    -> sobe so o que o rede.json coloca na maquina m3
+const maquina = process.argv[2];
+
+if (maquina && !MAQUINAS[maquina]) {
+  console.error(`Maquina "${maquina}" nao existe no rede.json. Opcoes: ${Object.keys(MAQUINAS).join(", ")}`);
+  process.exit(1);
+}
+
+const escolhidos = COMPONENTES.filter((componente) => !maquina || componente.maquina === maquina);
+
+if (escolhidos.length === 0) {
+  console.error(`Nenhum componente esta na maquina ${maquina} no rede.json.`);
+  process.exit(1);
+}
+
+// Pega o erro mais comum no laboratorio: subir a maquina errada, ou o IP
+// do rede.json estar desatualizado.
+if (maquina) {
+  const ip = MAQUINAS[maquina];
+  const ips = ipsDestaMaquina();
+  if (!ip.startsWith("127.") && !ips.includes(ip)) {
+    console.warn(
+      `ATENCAO: no rede.json a ${maquina} e ${ip}, mas os IPs deste computador sao ${ips.join(", ")}.`
+    );
+  }
+}
+
 const processos = new Map<string, ChildProcess>();
 
-function subir(nome: string, arquivo: string, ...args: string[]): void {
+for (const componente of escolhidos) {
   // O teclado fica com este processo (stdin "ignore" nos filhos). O canal
   // "ipc" leva o cenario digitado ate o talhao certo.
-  const processo = fork(path.join(__dirname, arquivo), args, {
+  const processo = fork(path.join(__dirname, componente.arquivo), componente.args, {
     stdio: ["ignore", "inherit", "inherit", "ipc"],
   });
-  processos.set(nome, processo);
+  processos.set(componente.nome, processo);
 }
 
-subir("Servico de Media", "servico-media.ts");
-subir("Servico de Anomalias", "servico-anomalias.ts");
-for (const gateway of GATEWAYS) {
-  for (const talhao of gateway.talhoes) subir(talhao.id, "talhao.ts", talhao.id);
-  subir(gateway.id, "gateway.ts", gateway.id);
+const talhoesAqui = escolhidos
+  .filter((componente) => componente.arquivo === "talhao.ts")
+  .map((componente) => componente.nome);
+
+console.log(`Subindo ${maquina ? `a maquina ${maquina}` : "tudo"}: ${escolhidos.map((c) => c.nome).join(", ")}`);
+if (talhoesAqui.length > 0) {
+  console.log(`Para mudar o clima de um talhao, digite o talhao e o cenario. Ex.: ${talhoesAqui[0]} seca`);
+  console.log(`Cenarios: ${Object.keys(CENARIOS).join(", ")}`);
 }
-subir("FOG", "fog.ts");
-
-const talhoes = new Set(GATEWAYS.flatMap((gateway) => gateway.talhoes.map((t) => t.id)));
-
-console.log("Para mudar o clima de um talhao, digite o talhao e o cenario. Ex.: G1-T01 seca");
-console.log(`Cenarios: ${Object.keys(CENARIOS).join(", ")}\n`);
+console.log();
 
 readline.createInterface({ input: process.stdin }).on("line", (linha) => {
-  const [talhao, cenario] = linha.trim().split(/\s+/);
-  const processo = processos.get(talhao ?? "");
+  if (!linha.trim()) return;
 
-  if (!talhao || !cenario || !talhoes.has(talhao) || !processo?.connected) {
-    if (linha.trim()) console.log("Use: <talhao> <cenario>. Ex.: G1-T01 seca");
+  const [talhao = "", cenario] = linha.trim().split(/\s+/);
+  const processo = processos.get(talhao);
+
+  if (!cenario || !talhoesAqui.includes(talhao) || !processo?.connected) {
+    console.log(`Use: <talhao> <cenario>. Talhoes nesta maquina: ${talhoesAqui.join(", ") || "nenhum"}`);
     return;
   }
   processo.send(cenario);

@@ -1,5 +1,5 @@
 import * as net from "node:net";
-import { HOST, TIMEOUT_MS } from "./config";
+import { Endereco, TIMEOUT_MS } from "./config";
 import { Mensagem } from "./tipos";
 
 export function enviar(socket: net.Socket, mensagem: Mensagem): void {
@@ -40,16 +40,16 @@ export function aoReceber(socket: net.Socket, tratar: (mensagem: Mensagem) => vo
 }
 
 /**
- * Lado cliente: conecta na porta, envia um pedido e devolve a primeira
+ * Lado cliente: conecta no endereco, envia um pedido e devolve a primeira
  * resposta. Cada pedido usa uma conexao nova, fechada logo em seguida.
  */
-export function pedir(porta: number, pedido: Mensagem): Promise<Mensagem> {
+export function pedir(destino: Endereco, pedido: Mensagem): Promise<Mensagem> {
   return new Promise((resolve, reject) => {
-    const socket = net.createConnection({ host: HOST, port: porta });
+    const socket = net.createConnection({ host: destino.host, port: destino.porta });
 
     const timeout = setTimeout(() => {
       socket.destroy();
-      reject(new Error(`sem resposta em ${TIMEOUT_MS}ms`));
+      reject(new Error(`sem resposta de ${destino.host}:${destino.porta} em ${TIMEOUT_MS}ms`));
     }, TIMEOUT_MS);
 
     socket.on("connect", () => enviar(socket, pedido));

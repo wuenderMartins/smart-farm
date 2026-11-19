@@ -1,49 +1,115 @@
-// Topologia da fazenda, seguindo o diagrama: duas areas Edge, cada uma
-// com um gateway que atende tres talhoes. Tudo roda na mesma maquina,
-// entao cada componente e identificado pela sua porta.
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-export const HOST = "127.0.0.1";
+// Onde cada componente roda vem do rede.json, na pasta parte-02. Para
+// espalhar a fazenda por varias maquinas so esse arquivo muda: o codigo
+// e o mesmo em todas elas.
 
-export interface TalhaoInfo {
-  id: string;
+export interface Endereco {
+  host: string;
   porta: number;
+}
+
+export interface TalhaoInfo extends Endereco {
+  id: string;
+  maquina: string;
 }
 
 // A porta do gateway e a do lado servidor dele, onde a FOG conecta.
-export interface GatewayInfo {
+export interface GatewayInfo extends Endereco {
   id: string;
-  porta: number;
+  maquina: string;
   talhoes: TalhaoInfo[];
 }
 
-export const GATEWAYS: GatewayInfo[] = [
-  {
-    id: "G1",
-    porta: 4501,
-    talhoes: [
-      { id: "G1-T01", porta: 4101 },
-      { id: "G1-T02", porta: 4102 },
-      { id: "G1-T03", porta: 4103 },
-    ],
-  },
-  {
-    id: "G2",
-    porta: 4502,
-    talhoes: [
-      { id: "G2-T01", porta: 4201 },
-      { id: "G2-T02", porta: 4202 },
-      { id: "G2-T03", porta: 4203 },
-    ],
-  },
-];
+export interface ServicoInfo extends Endereco {
+  maquina: string;
+}
 
-// Servidor gRPC do microsservico para calculo. Fica abaixo de 49152 de
-// proposito: o Windows reserva faixas acima disso (Hyper-V, WSL, Docker),
-// e nelas nenhum programa consegue abrir porta (erro EACCES).
-export const PORTA_SERVICO_MEDIA = 4300;
+interface RedeJson {
+  maquinas: Record<string, string>;
+  talhoes: Record<string, { maquina: string; porta: number }>;
+  gateways: Record<string, { maquina: string; porta: number; talhoes: string[] }>;
+  servicoMedia: { maquina: string; porta: number };
+  servicoAnomalias: { maquina: string; porta: number };
+  fog: { maquina: string };
+}
 
-// Servidor gRPC do microsservico de analise de anomalias, usado pela FOG.
-export const PORTA_SERVICO_ANOMALIAS = 4400;
+export const ARQUIVO_REDE = path.join(__dirname, "..", "rede.json");
+
+function erroNaRede(motivo: string): never {
+  console.error(`Problema no ${ARQUIVO_REDE}: ${motivo}`);
+  process.exit(1);
+}
+
+function lerRede(): RedeJson {
+  let rede: RedeJson;
+  try {
+    rede = JSON.parse(fs.readFileSync(ARQUIVO_REDE, "utf8"));
+  } catch (erro) {
+    return erroNaRede((erro as Error).message);
+  }
+
+  for (const secao of ["maquinas", "talhoes", "gateways", "servicoMedia", "servicoAnomalias", "fog"]) {
+    if (!(secao in rede)) erroNaRede(`falta a secao "${secao}"`);
+  }
+  return rede;
+}
+
+const rede = lerRede();
+
+// Nome da maquina -> IP dela. Ex.: "m1" -> "192.168.0.11".
+export const MAQUINAS: Record<string, string> = rede.maquinas;
+
+function ipDa(maquina: string, componente: string): string {
+  return (
+    MAQUINAS[maquina] ??
+    erroNaRede(`${componente} esta na maquina "${maquina}", que nao aparece em "maquinas"`)
+  );
+}
+
+export const TALHOES: TalhaoInfo[] = Object.entries(rede.talhoes).map(([id, talhao]) => ({
+  id,
+  maquina: talhao.maquina,
+  host: ipDa(talhao.maquina, id),
+  porta: talhao.porta,
+}));
+
+export const GATEWAYS: GatewayInfo[] = Object.entries(rede.gateways).map(([id, gateway]) => ({
+  id,
+  maquina: gateway.maquina,
+  host: ipDa(gateway.maquina, id),
+  porta: gateway.porta,
+  talhoes: gateway.talhoes.map(
+    (idTalhao) =>
+      buscarTalhao(idTalhao) ??
+      erroNaRede(`o gateway ${id} usa o talhao ${idTalhao}, que nao aparece em "talhoes"`)
+  ),
+}));
+
+export const SERVICO_MEDIA: ServicoInfo = {
+  ...rede.servicoMedia,
+  host: ipDa(rede.servicoMedia.maquina, "servicoMedia"),
+};
+
+export const SERVICO_ANOMALIAS: ServicoInfo = {
+  ...rede.servicoAnomalias,
+  host: ipDa(rede.servicoAnomalias.maquina, "servicoAnomalias"),
+};
+
+// A FOG so faz pedidos, entao nao tem porta.
+export const FOG = { maquina: rede.fog.maquina, host: ipDa(rede.fog.maquina, "fog") };
+
+/**
+ * Endereco em que um servidor escuta. Com IP de loopback (127.x, teste
+ * em um computador so) ele escuta so nesse IP e nem aparece na rede. Com
+ * IP de verdade, escuta em todas as placas de rede (0.0.0.0) para que as
+ * outras maquinas consigam conectar.
+ */
+export function escutarEm(maquina: string): string {
+  const ip = ipDa(maquina, "servidor");
+  return ip.startsWith("127.") ? ip : "0.0.0.0";
+}
 
 // De quanto em quanto tempo o gateway le os talhoes e a FOG consulta os
 // gateways, e quanto tempo cada um espera uma resposta antes de desistir.
@@ -59,5 +125,5 @@ export function buscarGateway(id: string): GatewayInfo | undefined {
 }
 
 export function buscarTalhao(id: string): TalhaoInfo | undefined {
-  return GATEWAYS.flatMap((gateway) => gateway.talhoes).find((talhao) => talhao.id === id);
+  return TALHOES.find((talhao) => talhao.id === id);
 }

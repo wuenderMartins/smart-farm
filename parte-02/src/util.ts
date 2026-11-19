@@ -1,3 +1,13 @@
+import * as os from "node:os";
+
+/** IPs (IPv4) de todas as placas de rede desta maquina, inclusive 127.0.0.1. */
+export function ipsDestaMaquina(): string[] {
+  return Object.values(os.networkInterfaces())
+    .flat()
+    .filter((placa): placa is os.NetworkInterfaceInfo => placa?.family === "IPv4")
+    .map((placa) => placa.address);
+}
+
 /** Cria uma funcao de log que mostra a hora e quem esta falando. */
 export function criarLog(origem: string): (texto: string) => void {
   return (texto) => {

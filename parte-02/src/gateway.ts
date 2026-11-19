@@ -3,11 +3,11 @@ import { pedirMedia } from "./cliente-media";
 import {
   GATEWAYS,
   GatewayInfo,
-  HOST,
   INTERVALO_LEITURA_MS,
   TAMANHO_JANELA,
   TalhaoInfo,
   buscarGateway,
+  escutarEm,
 } from "./config";
 import { aoReceber, enviar, pedir } from "./socket";
 import { Leitura, Situacao } from "./tipos";
@@ -37,7 +37,7 @@ let situacao: Situacao | null = null;
 // gateway segue com os outros: um talhao fora do ar nao para a fazenda.
 async function lerTalhao(talhao: TalhaoInfo): Promise<Leitura | null> {
   try {
-    const resposta = await pedir(talhao.porta, { tipo: "PEDIR_LEITURA" });
+    const resposta = await pedir(talhao, { tipo: "PEDIR_LEITURA" });
     if (resposta.tipo === "LEITURA") return resposta.leitura;
     log(`${talhao.id} respondeu ${resposta.tipo}`);
   } catch (erro) {
@@ -104,11 +104,14 @@ function atenderFog(): void {
     process.exit(1);
   });
 
-  servidor.listen(gateway.porta, HOST, () => log(`atendendo a FOG na porta ${gateway.porta}`));
+  servidor.listen(gateway.porta, escutarEm(gateway.maquina), () =>
+    log(`atendendo a FOG na porta ${gateway.porta}`)
+  );
 }
 
 async function executar(): Promise<void> {
-  log(`iniciado. Talhoes: ${gateway.talhoes.map((t) => t.id).join(", ")}`);
+  const talhoes = gateway.talhoes.map((t) => `${t.id} (${t.host}:${t.porta})`);
+  log(`iniciado. Talhoes: ${talhoes.join(", ")}`);
   atenderFog();
 
   // O proximo ciclo so comeca quando o anterior termina, entao eles nunca

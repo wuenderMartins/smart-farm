@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
-import { HOST, PORTA_SERVICO_ANOMALIAS, TIMEOUT_MS } from "./config";
-import { ServicoAnomalias } from "./grpc";
+import { SERVICO_ANOMALIAS, TIMEOUT_MS } from "./config";
+import { ServicoAnomalias, descreverErro } from "./grpc";
 import { Diagnostico, PedidoAnalise } from "./tipos";
 
 // Mesmo esquema do cliente-media.ts: o tipo descreve o rpc que o
@@ -13,8 +13,9 @@ type ClienteAnomalias = grpc.Client & {
   ): grpc.ClientUnaryCall;
 };
 
+const endereco = `${SERVICO_ANOMALIAS.host}:${SERVICO_ANOMALIAS.porta}`;
 const cliente = new ServicoAnomalias(
-  `${HOST}:${PORTA_SERVICO_ANOMALIAS}`,
+  endereco,
   grpc.credentials.createInsecure()
 ) as unknown as ClienteAnomalias;
 
@@ -24,7 +25,7 @@ export function analisar(pedido: PedidoAnalise): Promise<Diagnostico> {
     const opcoes = { deadline: Date.now() + TIMEOUT_MS };
 
     cliente.Analisar(pedido, opcoes, (erro, diagnostico) => {
-      if (erro) reject(new Error(erro.details || erro.message));
+      if (erro) reject(new Error(descreverErro(erro, endereco)));
       else resolve(diagnostico!);
     });
   });

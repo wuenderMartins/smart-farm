@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import { HOST, PORTA_SERVICO_MEDIA } from "./config";
+import { SERVICO_MEDIA, escutarEm } from "./config";
 import { calcularMedia } from "./calculo";
 import { ServicoMedia } from "./grpc";
 import { Lote, Media } from "./tipos";
@@ -33,7 +33,7 @@ const servidor = new grpc.Server();
 servidor.addService(ServicoMedia.service, { CalcularMedia });
 
 servidor.bindAsync(
-  `${HOST}:${PORTA_SERVICO_MEDIA}`,
+  `${escutarEm(SERVICO_MEDIA.maquina)}:${SERVICO_MEDIA.porta}`,
   grpc.ServerCredentials.createInsecure(),
   (erro, porta) => {
     if (erro) {
