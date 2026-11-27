@@ -12,6 +12,7 @@
     "fog": "tsx src/fog.ts",
     "verificar": "tsx src/verificar.ts",
     "ip": "tsx src/ip.ts",
+    "configurar": "tsx src/configurar.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

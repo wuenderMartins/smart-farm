@@ -43,7 +43,9 @@ function erroNaRede(motivo: string): never {
 }
 
 function lerRede(): RedeJson {
-  const texto = fs.readFileSync(ARQUIVO_REDE, "utf8");
+  // Alguns editores gravam um caractere invisivel (BOM) no inicio do
+  // arquivo, que o JSON.parse nao aceita; ele e removido aqui.
+  const texto = fs.readFileSync(ARQUIVO_REDE, "utf8").replace(/^﻿/, "");
   let rede: RedeJson;
   try {
     rede = JSON.parse(texto);
