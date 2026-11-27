@@ -43,11 +43,17 @@ function erroNaRede(motivo: string): never {
 }
 
 function lerRede(): RedeJson {
+  const texto = fs.readFileSync(ARQUIVO_REDE, "utf8");
   let rede: RedeJson;
   try {
-    rede = JSON.parse(fs.readFileSync(ARQUIVO_REDE, "utf8"));
+    rede = JSON.parse(texto);
   } catch (erro) {
-    return erroNaRede((erro as Error).message);
+    // Mostra a linha apontada pelo erro, que quase sempre e uma aspa ou
+    // virgula faltando por causa de edicao a mao.
+    const mensagem = (erro as Error).message;
+    const linha = Number(/line (\d+)/.exec(mensagem)?.[1]);
+    const trecho = linha ? `\n  linha ${linha}: ${texto.split(/\r?\n/)[linha - 1] ?? ""}` : "";
+    return erroNaRede(`${mensagem}${trecho}\n  Confira as aspas e as virgulas perto dessa linha.`);
   }
 
   for (const secao of ["maquinas", "talhoes", "gateways", "servicoMedia", "servicoAnomalias", "fog"]) {
@@ -58,8 +64,18 @@ function lerRede(): RedeJson {
 
 const rede = lerRede();
 
-// Nome da maquina -> IP dela. Ex.: "m1" -> "192.168.0.11".
-export const MAQUINAS: Record<string, string> = rede.maquinas;
+// Nome da maquina -> IP dela. Ex.: "m1" -> "192.168.0.11". Espacos
+// sobrando dentro das aspas sao ignorados; IP mal escrito para tudo com
+// uma mensagem clara, em vez de falhar depois na conexao.
+export const MAQUINAS: Record<string, string> = Object.fromEntries(
+  Object.entries(rede.maquinas).map(([maquina, valor]) => {
+    const ip = String(valor).trim();
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+      erroNaRede(`o IP da maquina ${maquina} ("${valor}") nao e valido. Use algo como 172.23.133.150`);
+    }
+    return [maquina, ip];
+  })
+);
 
 function ipDa(maquina: string, componente: string): string {
   return (
